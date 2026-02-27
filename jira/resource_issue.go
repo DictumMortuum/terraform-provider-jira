@@ -45,10 +45,6 @@ func resourceIssue() *schema.Resource {
 					Required: true,
 				},
 			},
-			"parent_key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
 			"issue_type": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -115,7 +111,6 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 	labels := d.Get("labels")
 	summary := d.Get("summary").(string)
 	projectKey := d.Get("project_key").(string)
-	parentKey := d.Get("parent_key").(string)
 
 	i := jira.Issue{
 		Fields: &jira.IssueFields{
@@ -162,14 +157,6 @@ func resourceIssueCreate(d *schema.ResourceData, m interface{}) error {
 			i.Fields.Labels = append(i.Fields.Labels, fmt.Sprintf("%v", label))
 		}
 	}
-
-	if parentKey != "" {
-		i.Fields.Parent = map[string]interace{}{
-			"key": parentKey
-		}
-	}
-
-	payload.Fields = expandStringMap(d.Get("fields").(map[string]interface{}))
 
 	issue, res, err := config.jiraClient.Issue.Create(&i)
 	if err != nil {
@@ -219,7 +206,7 @@ func resourceIssueRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if issue.Fields.Parent != nil {
-		d.Set("parent", issue.Fields.Parent.Key)
+		d.Set("parent", issue.Fields.Parent.ID)
 	}
 
 	// Custom or non-standard fields
